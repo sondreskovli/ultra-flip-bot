@@ -1,4 +1,4 @@
 discord.py
 flask
-rquests
+requests
 phyton-dotenv
