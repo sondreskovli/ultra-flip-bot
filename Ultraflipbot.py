@@ -97,7 +97,7 @@ while True:
             roi = (profit / asking) * 100
             scam = scam_score(text, asking, market_price)
 
-            if roi > 20 and profit > 800 and scam < 40:
+            if True:
                 msg = f"""
 🔥 ULTRA FLIP ALERT 🔥
 
