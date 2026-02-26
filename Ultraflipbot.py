@@ -176,4 +176,5 @@ while True:
     # frigjør memory (viktig for Render free tier)
     gc.collect()
 
+    send("🧪 LIVE TEST OK")
     time.sleep(300)
