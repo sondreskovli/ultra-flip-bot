@@ -9,7 +9,7 @@ TOKEN = "8646755134:AAH0lIW83diJ-BslB65Ir40AXl0QyUVJZQg"
 CHAT_ID = "5331968688"
 
 SEARCH = {
-       "iphone": "https://www.finn.no/bap/forsale/search.html?q=iphone&rss=true",
+    "iphone": "https://www.finn.no/bap/forsale/search.html?q=iphone&rss=true",
     "airpods": "https://www.finn.no/bap/forsale/search.html?q=airpods&rss=true",
     "ps5": "https://www.finn.no/bap/forsale/search.html?q=playstation+5&rss=true",
     "macbook": "https://www.finn.no/bap/forsale/search.html?q=macbook&rss=true",
@@ -61,22 +61,28 @@ def scam_score(text, asking, market):
     score = 0
     text = text.lower()
 
-    red_flags = ["forskudd", "western union", "ingen kvittering", "må sendes"]
+    red_flags = [
+        "forskudd", "western union", "ingen kvittering",
+        "må sendes", "kun vipps", "haster", "bankoverføring"
+    ]
 
     for flag in red_flags:
         if flag in text:
             score += 25
 
-    if market and asking < market * 0.6:
-        score += 30
+    if market and asking < market * 0.5:
+        score += 35
 
-    if len(text) < 40:
+    if len(text) < 35:
         score += 10
 
     return min(score, 100)
 
 setup_db()
-send("🚀 BOT ER LIVE 🚀")
+send("🚀 ULTRA FLIP PRO LIVE 🚀")
+
+startup_mode = True
+start_time = time.time()
 
 while True:
     for category in SEARCH:
@@ -93,7 +99,6 @@ while True:
             save_ad(ad_id, entry.title, asking, category)
 
             market_price = get_market_price(category)
-
             if not market_price:
                 continue
 
@@ -101,9 +106,11 @@ while True:
             roi = (profit / asking) * 100
             scam = scam_score(text, asking, market_price)
 
-            if True:
-                msg = f"""
-🔥 ULTRA FLIP ALERT 🔥
+            # 🔵 24 TIMER STARTUP MODE
+            if startup_mode:
+                if roi > 12 and profit > 300 and scam < 60:
+                    msg = f"""
+🚀 STARTUP DEAL 🚀
 
 {entry.title}
 
@@ -113,9 +120,30 @@ Profit: {profit} kr
 ROI: {roi:.1f} %
 
 Scam Risk: {scam}/100
-
 {entry.link}
 """
-                send(msg)
+                    send(msg)
 
-    time.sleep(20)
+            # 🔴 PRO MODE ETTER 24T
+            else:
+                if roi > 18 and profit > 600 and scam < 45:
+                    msg = f"""
+🔥 FLIP ALERT 🔥
+
+{entry.title}
+
+Pris: {asking} kr
+Markedspris: {market_price} kr
+Profit: {profit} kr
+ROI: {roi:.1f} %
+
+Scam Risk: {scam}/100
+{entry.link}
+"""
+                    send(msg)
+
+    # 24 timer startup
+    if time.time() - start_time > 86400:
+        startup_mode = False
+
+    time.sleep(18)
