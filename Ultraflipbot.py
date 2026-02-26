@@ -9,8 +9,11 @@ TOKEN = "8646755134:AAH0lIW83diJ-BslB65Ir40AXl0QyUVJZQg"
 CHAT_ID = "5331968688"
 
 SEARCH = {
+       "iphone": "https://www.finn.no/bap/forsale/search.html?q=iphone&rss=true",
+    "airpods": "https://www.finn.no/bap/forsale/search.html?q=airpods&rss=true",
     "ps5": "https://www.finn.no/bap/forsale/search.html?q=playstation+5&rss=true",
-    "iphone": "https://www.finn.no/bap/forsale/search.html?q=iphone&rss=true"
+    "macbook": "https://www.finn.no/bap/forsale/search.html?q=macbook&rss=true",
+    "ipad": "https://www.finn.no/bap/forsale/search.html?q=ipad&rss=true"
 }
 
 def setup_db():
