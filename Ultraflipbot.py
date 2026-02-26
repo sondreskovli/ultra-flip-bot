@@ -14,6 +14,7 @@ SEARCH = {
 }
 
 def setup_db():
+    send("🚀 BOT ER LIVE 🚀")
     conn = sqlite3.connect("market.db")
     c = conn.cursor()
     c.execute("""
