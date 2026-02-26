@@ -6,8 +6,8 @@ import sqlite3
 import statistics
 import gc
 
-TOKEN = "DIN_TOKEN"
-CHAT_ID = "DIN_CHAT_ID"
+TOKEN = "8646755134:AAH0lIW83diJ-BslB65Ir40AXl0QyUVJZQg"
+CHAT_ID = "5331968688"
 
 SEARCH = {
     "iphone": "https://www.finn.no/bap/forsale/search.html?q=iphone&rss=true",
