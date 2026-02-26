@@ -14,7 +14,6 @@ SEARCH = {
 }
 
 def setup_db():
-    send("🚀 BOT ER LIVE 🚀")
     conn = sqlite3.connect("market.db")
     c = conn.cursor()
     c.execute("""
@@ -74,6 +73,7 @@ def scam_score(text, asking, market):
     return min(score, 100)
 
 setup_db()
+send("🚀 BOT ER LIVE 🚀")
 
 while True:
     for category in SEARCH:
