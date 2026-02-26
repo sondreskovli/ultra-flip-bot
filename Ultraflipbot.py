@@ -5,8 +5,8 @@ import re
 import sqlite3
 import statistics
 
-TOKEN = "8646755134:AAH0lIW83diJ-BslB65Ir40AXl0QyUVJZQg"
-CHAT_ID = "5331968688"
+TOKEN = "DIN_TOKEN"
+CHAT_ID = "DIN_CHAT_ID"
 
 SEARCH = {
     "iphone": "https://www.finn.no/bap/forsale/search.html?q=iphone&rss=true",
@@ -61,30 +61,28 @@ def scam_score(text, asking, market):
     score = 0
     text = text.lower()
 
-    red_flags = [
-        "forskudd", "western union", "ingen kvittering",
-        "må sendes", "kun vipps", "haster", "bankoverføring"
-    ]
-
-    for flag in red_flags:
-        if flag in text:
+    flags = ["forskudd","western union","ingen kvittering","må sendes","kun vipps","haster"]
+    for f in flags:
+        if f in text:
             score += 25
 
     if market and asking < market * 0.5:
-        score += 35
+        score += 30
 
     if len(text) < 35:
         score += 10
 
-    return min(score, 100)
+    return min(score,100)
 
 setup_db()
-send("🚀 ULTRA FLIP PRO LIVE 🚀")
+send("🚀 TRADER ENGINE LIVE")
 
 startup_mode = True
 start_time = time.time()
 
 while True:
+    summary = []
+
     for category in SEARCH:
         feed = feedparser.parse(SEARCH[category])
 
@@ -96,9 +94,12 @@ while True:
             if not asking:
                 continue
 
-            save_ad(ad_id, entry.title, asking, category)
+            if asking > 10000:
+                continue
 
+            save_ad(ad_id, entry.title, asking, category)
             market_price = get_market_price(category)
+
             if not market_price:
                 continue
 
@@ -106,44 +107,34 @@ while True:
             roi = (profit / asking) * 100
             scam = scam_score(text, asking, market_price)
 
-            # 🔵 24 TIMER STARTUP MODE
+            # STARTUP 24t
             if startup_mode:
-                if roi > 12 and profit > 300 and scam < 60:
-                    msg = f"""
-🚀 STARTUP DEAL 🚀
+                if roi > 10 and profit > 250 and scam < 65:
+                    summary.append(
+                        f"🚀 START\n{entry.title}\nPris:{asking}\nFlip:+{profit}\n{entry.link}\n"
+                    )
 
-{entry.title}
-
-Pris: {asking} kr
-Markedspris: {market_price} kr
-Profit: {profit} kr
-ROI: {roi:.1f} %
-
-Scam Risk: {scam}/100
-{entry.link}
-"""
-                    send(msg)
-
-            # 🔴 PRO MODE ETTER 24T
+            # NORMAL MODE
             else:
-                if roi > 18 and profit > 600 and scam < 45:
-                    msg = f"""
-🔥 FLIP ALERT 🔥
+                if roi > 28 and profit > 900 and scam < 40:
+                    summary.append(
+                        f"🚨 BUY NOW\n{entry.title}\nPris:{asking}\nFlip:+{profit}\n{entry.link}\n"
+                    )
 
-{entry.title}
+                elif roi > 18 and profit > 600 and scam < 50:
+                    summary.append(
+                        f"🔥 STRONG\n{entry.title}\nPris:{asking}\nFlip:+{profit}\n{entry.link}\n"
+                    )
 
-Pris: {asking} kr
-Markedspris: {market_price} kr
-Profit: {profit} kr
-ROI: {roi:.1f} %
+                elif roi > 5 and profit > 400 and scam < 60:
+                    summary.append(
+                        f"💰 PRUTE\n{entry.title}\nPris:{asking}\nMulig flip:+{profit}\n{entry.link}\n"
+                    )
 
-Scam Risk: {scam}/100
-{entry.link}
-"""
-                    send(msg)
+    if summary:
+        send("📊 TRADER FEED\n\n" + "\n".join(summary[:15]))
 
-    # 24 timer startup
     if time.time() - start_time > 86400:
         startup_mode = False
 
-    time.sleep(18)
+    time.sleep(300)
