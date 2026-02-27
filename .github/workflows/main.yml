@@ -1,7 +1,7 @@
 # force cron refresh
 # activate cron
 # trigger cron update
-name: Ultra Flip Bot Cron
+name: Ultra Flip Bot Cron v2
 
 on:
   schedule:
