@@ -1,17 +1,17 @@
 import feedparser
-import time
 import requests
 import re
 import sqlite3
 import statistics
 import gc
+import time
 
 #############################
 # CONFIG
 #############################
 
-TOKEN = "PUT_YOUR_NEW_TOKEN_HERE"
-CHAT_ID = "PUT_YOUR_CHAT_ID_HERE"
+TOKEN = "8646755134:AAH0lIW83diJ-BslB65Ir40AXl0QyUVJZQg"
+CHAT_ID = "5331968688"
 
 SEARCH = {
     "iphone": "https://www.finn.no/bap/forsale/search.html?q=iphone&rss=true",
@@ -21,7 +21,6 @@ SEARCH = {
     "ipad": "https://www.finn.no/bap/forsale/search.html?q=ipad&rss=true"
 }
 
-# Fallback markedspriser hvis databasen er tom
 DEFAULT_MARKET = {
     "ps5": 4500,
     "iphone": 6000,
@@ -37,6 +36,7 @@ DEFAULT_MARKET = {
 def setup_db():
     conn = sqlite3.connect("market.db")
     c = conn.cursor()
+
     c.execute("""
     CREATE TABLE IF NOT EXISTS ads (
         id TEXT PRIMARY KEY,
@@ -46,6 +46,14 @@ def setup_db():
         date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
+
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS config (
+        key TEXT PRIMARY KEY,
+        value TEXT
+    )
+    """)
+
     conn.commit()
     conn.close()
 
@@ -72,8 +80,24 @@ def get_market_price(category):
     if len(prices) >= 5:
         return statistics.median(prices)
 
-    # fallback hvis ikke nok data
     return DEFAULT_MARKET.get(category)
+
+def get_start_time():
+    conn = sqlite3.connect("market.db")
+    c = conn.cursor()
+
+    c.execute("SELECT value FROM config WHERE key='start_time'")
+    row = c.fetchone()
+
+    if row:
+        start_time = float(row[0])
+    else:
+        start_time = time.time()
+        c.execute("INSERT INTO config VALUES ('start_time', ?)", (str(start_time),))
+        conn.commit()
+
+    conn.close()
+    return start_time
 
 #############################
 # TELEGRAM
@@ -99,9 +123,9 @@ def scam_score(text, asking, market):
     score = 0
     text = text.lower()
 
-    flags = ["forskudd", "western union", "ingen kvittering",
-             "må sendes", "kun vipps", "haster"]
-    
+    flags = ["forskudd","western union","ingen kvittering",
+             "må sendes","kun vipps","haster"]
+
     for f in flags:
         if f in text:
             score += 25
@@ -112,36 +136,33 @@ def scam_score(text, asking, market):
     if len(text) < 35:
         score += 10
 
-    return min(score, 100)
+    return min(score,100)
 
 #############################
-# START
+# MAIN RUN
 #############################
 
-setup_db()
-send("🚀 ULTRA FLIP BOT STARTET")
+def run_once():
 
-print("Bot started...")
+    print("🔥 CRON RUN STARTED")
 
-#############################
-# MAIN LOOP
-#############################
+    start_time = get_start_time()
+    startup_mode = (time.time() - start_time) < 86400
 
-while True:
-    total_found = 0
-    total_matches = []
+    if startup_mode:
+        print("Mode: STARTUP")
+    else:
+        print("Mode: NORMAL")
+
+    summary = []
 
     for category in SEARCH:
-        try:
-            feed = feedparser.parse(SEARCH[category])
-        except Exception as e:
-            print("RSS error:", e)
-            continue
 
-        print(f"Scanning {category}...")
+        print(f"Scanning {category}")
+
+        feed = feedparser.parse(SEARCH[category])
 
         for entry in feed.entries:
-            total_found += 1
 
             try:
                 ad_id = entry.id
@@ -166,30 +187,43 @@ while True:
 
                 print(f"{entry.title} | {asking} | ROI {round(roi,1)}%")
 
-                # Trigger nivåer
-                if roi > 30 and profit > 1000 and scam < 40:
-                    total_matches.append(
-                        f"🚨 BUY NOW\n{entry.title}\nPris: {asking}\nFlip: +{profit}\n{entry.link}\n"
-                    )
+                if startup_mode:
+                    if roi > 10 and profit > 250 and scam < 65:
+                        summary.append(
+                            f"🚀 START\n{entry.title}\nPris:{asking}\nFlip:+{profit}\n{entry.link}\n"
+                        )
 
-                elif roi > 20 and profit > 600 and scam < 50:
-                    total_matches.append(
-                        f"🔥 STRONG\n{entry.title}\nPris: {asking}\nFlip: +{profit}\n{entry.link}\n"
-                    )
+                else:
+                    if roi > 28 and profit > 900 and scam < 40:
+                        summary.append(
+                            f"🚨 BUY NOW\n{entry.title}\nPris:{asking}\nFlip:+{profit}\n{entry.link}\n"
+                        )
 
-                elif roi > 10 and profit > 400 and scam < 60:
-                    total_matches.append(
-                        f"💰 PRUTE\n{entry.title}\nPris: {asking}\nMulig flip: +{profit}\n{entry.link}\n"
-                    )
+                    elif roi > 18 and profit > 600 and scam < 50:
+                        summary.append(
+                            f"🔥 STRONG\n{entry.title}\nPris:{asking}\nFlip:+{profit}\n{entry.link}\n"
+                        )
+
+                    elif roi > 5 and profit > 400 and scam < 60:
+                        summary.append(
+                            f"💰 PRUTE\n{entry.title}\nPris:{asking}\nMulig flip:+{profit}\n{entry.link}\n"
+                        )
 
             except Exception as e:
                 print("Entry error:", e)
                 continue
 
-    print(f"Found {total_found} ads this round")
+    if summary:
+        send("📊 TRADER FEED\n\n" + "\n".join(summary[:15]))
 
-    if total_matches:
-        send("📊 ULTRA FEED\n\n" + "\n".join(total_matches[:15]))
-
+    print("✅ CRON RUN DONE")
     gc.collect()
-    time.sleep(300)
+
+
+#############################
+# ENTRY
+#############################
+
+if name == "__main__":
+    setup_db()
+    run_once()
