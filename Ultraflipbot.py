@@ -6,8 +6,12 @@ import sqlite3
 import statistics
 import gc
 
-TOKEN = "8646755134:AAH0lIW83diJ-BslB65Ir40AXl0QyUVJZQg"
-CHAT_ID = "5331968688"
+#############################
+# CONFIG
+#############################
+
+TOKEN = "PUT_YOUR_NEW_TOKEN_HERE"
+CHAT_ID = "PUT_YOUR_CHAT_ID_HERE"
 
 SEARCH = {
     "iphone": "https://www.finn.no/bap/forsale/search.html?q=iphone&rss=true",
@@ -15,6 +19,15 @@ SEARCH = {
     "ps5": "https://www.finn.no/bap/forsale/search.html?q=playstation+5&rss=true",
     "macbook": "https://www.finn.no/bap/forsale/search.html?q=macbook&rss=true",
     "ipad": "https://www.finn.no/bap/forsale/search.html?q=ipad&rss=true"
+}
+
+# Fallback markedspriser hvis databasen er tom
+DEFAULT_MARKET = {
+    "ps5": 4500,
+    "iphone": 6000,
+    "airpods": 1500,
+    "macbook": 8000,
+    "ipad": 4000
 }
 
 #############################
@@ -39,8 +52,10 @@ def setup_db():
 def save_ad(ad_id, title, price, category):
     conn = sqlite3.connect("market.db")
     c = conn.cursor()
-    c.execute("INSERT OR IGNORE INTO ads VALUES (?, ?, ?, ?, datetime('now'))",
-              (ad_id, title, price, category))
+    c.execute(
+        "INSERT OR IGNORE INTO ads VALUES (?, ?, ?, ?, datetime('now'))",
+        (ad_id, title, price, category)
+    )
     conn.commit()
     conn.close()
 
@@ -48,15 +63,17 @@ def get_market_price(category):
     conn = sqlite3.connect("market.db")
     c = conn.cursor()
     c.execute("""
-    SELECT price FROM ads
-    WHERE category=? AND date >= datetime('now', '-30 days')
+        SELECT price FROM ads
+        WHERE category=? AND date >= datetime('now', '-30 days')
     """, (category,))
     prices = [row[0] for row in c.fetchall()]
     conn.close()
 
-    if len(prices) < 5:
-        return None
-    return statistics.median(prices)
+    if len(prices) >= 5:
+        return statistics.median(prices)
+
+    # fallback hvis ikke nok data
+    return DEFAULT_MARKET.get(category)
 
 #############################
 # TELEGRAM
@@ -66,22 +83,25 @@ def send(msg):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     try:
         requests.post(url, data={"chat_id": CHAT_ID, "text": msg})
-    except:
-        pass
+    except Exception as e:
+        print("Telegram error:", e)
 
 #############################
 # HELPERS
 #############################
 
 def extract_price(text):
-    nums = re.findall(r'\d+', text.replace(" ", ""))
+    cleaned = text.replace(" ", "")
+    nums = re.findall(r'\d+', cleaned)
     return int(nums[0]) if nums else None
 
 def scam_score(text, asking, market):
     score = 0
     text = text.lower()
 
-    flags = ["forskudd","western union","ingen kvittering","må sendes","kun vipps","haster"]
+    flags = ["forskudd", "western union", "ingen kvittering",
+             "må sendes", "kun vipps", "haster"]
+    
     for f in flags:
         if f in text:
             score += 25
@@ -92,32 +112,37 @@ def scam_score(text, asking, market):
     if len(text) < 35:
         score += 10
 
-    return min(score,100)
+    return min(score, 100)
 
 #############################
 # START
 #############################
 
 setup_db()
-send("🚀 TRADER ENGINE LIVE")
+send("🚀 ULTRA FLIP BOT STARTET")
 
-startup_mode = True
-start_time = time.time()
+print("Bot started...")
 
 #############################
 # MAIN LOOP
 #############################
 
 while True:
-    summary = []
+    total_found = 0
+    total_matches = []
 
     for category in SEARCH:
         try:
             feed = feedparser.parse(SEARCH[category])
-        except:
+        except Exception as e:
+            print("RSS error:", e)
             continue
 
+        print(f"Scanning {category}...")
+
         for entry in feed.entries:
+            total_found += 1
+
             try:
                 ad_id = entry.id
                 text = entry.title + " " + entry.summary
@@ -126,12 +151,12 @@ while True:
                 if not asking:
                     continue
 
-                if asking > 10000:
+                if asking > 20000:
                     continue
 
                 save_ad(ad_id, entry.title, asking, category)
-                market_price = get_market_price(category)
 
+                market_price = get_market_price(category)
                 if not market_price:
                     continue
 
@@ -139,42 +164,32 @@ while True:
                 roi = (profit / asking) * 100
                 scam = scam_score(text, asking, market_price)
 
-                # STARTUP 24h
-                if startup_mode:
-                    if roi > 10 and profit > 250 and scam < 65:
-                        summary.append(
-                            f"🚀 START\n{entry.title}\nPris:{asking}\nFlip:+{profit}\n{entry.link}\n"
-                        )
+                print(f"{entry.title} | {asking} | ROI {round(roi,1)}%")
 
-                # NORMAL MODE
-                else:
-                    if roi > 28 and profit > 900 and scam < 40:
-                        summary.append(
-                            f"🚨 BUY NOW\n{entry.title}\nPris:{asking}\nFlip:+{profit}\n{entry.link}\n"
-                        )
+                # Trigger nivåer
+                if roi > 30 and profit > 1000 and scam < 40:
+                    total_matches.append(
+                        f"🚨 BUY NOW\n{entry.title}\nPris: {asking}\nFlip: +{profit}\n{entry.link}\n"
+                    )
 
-                    elif roi > 18 and profit > 600 and scam < 50:
-                        summary.append(
-                            f"🔥 STRONG\n{entry.title}\nPris:{asking}\nFlip:+{profit}\n{entry.link}\n"
-                        )
+                elif roi > 20 and profit > 600 and scam < 50:
+                    total_matches.append(
+                        f"🔥 STRONG\n{entry.title}\nPris: {asking}\nFlip: +{profit}\n{entry.link}\n"
+                    )
 
-                    elif roi > 5 and profit > 400 and scam < 60:
-                        summary.append(
-                            f"💰 PRUTE\n{entry.title}\nPris:{asking}\nMulig flip:+{profit}\n{entry.link}\n"
-                        )
+                elif roi > 10 and profit > 400 and scam < 60:
+                    total_matches.append(
+                        f"💰 PRUTE\n{entry.title}\nPris: {asking}\nMulig flip: +{profit}\n{entry.link}\n"
+                    )
 
-            except:
+            except Exception as e:
+                print("Entry error:", e)
                 continue
 
-    if summary:
-        send("📊 TRADER FEED\n\n" + "\n".join(summary[:15]))
+    print(f"Found {total_found} ads this round")
 
-    # startup varer 24t
-    if time.time() - start_time > 86400:
-        startup_mode = False
+    if total_matches:
+        send("📊 ULTRA FEED\n\n" + "\n".join(total_matches[:15]))
 
-    # frigjør memory (viktig for Render free tier)
     gc.collect()
-
-    send("🧪 LIVE TEST OK")
     time.sleep(300)
