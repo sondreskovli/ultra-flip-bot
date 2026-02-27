@@ -5,7 +5,7 @@ name: Ultra Flip Bot Cron
 
 on:
   schedule:
-    - cron: "*/* * * * *"
+    - cron: "* * * * *"
   workflow_dispatch:
 
 jobs:
