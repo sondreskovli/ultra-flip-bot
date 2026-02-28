@@ -145,26 +145,16 @@ def scam_score(text, asking, market):
 
 def run_once():
 
-    print("🔥 CRON RUN STARTED")
-
-    start_time = get_start_time()
-    startup_mode = (time.time() - start_time) < 86400
-
-    if startup_mode:
-        print("Mode: STARTUP")
-    else:
-        print("Mode: NORMAL")
+print("🔥 CRON RUN STARTED")
 
     summary = []
 
     for category in SEARCH:
-
         print(f"Scanning {category}")
 
         feed = feedparser.parse(SEARCH[category])
 
         for entry in feed.entries:
-
             try:
                 ad_id = entry.id
                 text = entry.title + " " + entry.summary
@@ -188,34 +178,17 @@ def run_once():
 
                 print(f"{entry.title} | {asking} | ROI {round(roi,1)}%")
 
-                if startup_mode:
-                    if roi > 10 and profit > 250 and scam < 65:
-                        summary.append(
-                            f"🚀 START\n{entry.title}\nPris:{asking}\nFlip:+{profit}\n{entry.link}\n"
-                        )
-
-                else:
-                    if roi > 28 and profit > 900 and scam < 40:
-                        summary.append(
-                            f"🚨 BUY NOW\n{entry.title}\nPris:{asking}\nFlip:+{profit}\n{entry.link}\n"
-                        )
-
-                    elif roi > 18 and profit > 600 and scam < 50:
-                        summary.append(
-                            f"🔥 STRONG\n{entry.title}\nPris:{asking}\nFlip:+{profit}\n{entry.link}\n"
-                        )
-
-                    elif roi > 5 and profit > 400 and scam < 60:
-                        summary.append(
-                            f"💰 PRUTE\n{entry.title}\nPris:{asking}\nMulig flip:+{profit}\n{entry.link}\n"
-                        )
+                if roi > 15 and profit > 500 and scam < 55:
+                    summary.append(
+                        f"🔥 DEAL\n{entry.title}\nPris:{asking}\nFlip:+{profit}\nROI:{round(roi,1)}%"
+                    )
 
             except Exception as e:
                 print("Entry error:", e)
                 continue
 
     if summary:
-        send("📊 TRADER FEED\n\n" + "\n".join(summary[:15]))
+        send("📊 TRADER FEED\n\n" + "\n\n".join(summary[:10]))
 
     print("✅ CRON RUN DONE")
     gc.collect()
