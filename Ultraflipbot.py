@@ -15,15 +15,11 @@ TOKEN = "8646755134:AAH0lIW83diJ-BslB65Ir40AXl0QyUVJZQg"
 CHAT_ID = "5331968688"
 
 SEARCH = {
-    "iphone": "https://www.finn.no/bap/forsale/search.html?q=iphone+OR+iphonee+OR+iphon+OR+apple+iphone&rss=true",
-
-    "airpods": "https://www.finn.no/bap/forsale/search.html?q=airpods+OR+air+pods+OR+airpod+OR+air+pod&rss=true",
-
-    "ps5": "https://www.finn.no/bap/forsale/search.html?q=ps5+OR+ps-5+OR+playstation+5+OR+play+station+5+OR+ps+5&rss=true",
-
-    "macbook": "https://www.finn.no/bap/forsale/search.html?q=macbook+OR+mac+book+OR+mackbook+OR+macbok+OR+apple+macbook&rss=true",
-
-    "ipad": "https://www.finn.no/bap/forsale/search.html?q=ipad+OR+ipad+pro+OR+ipadd+OR+apple+ipad&rss=true"
+    "iphone": "https://www.finn.no/bap/forsale/search.html?q=iphone&rss=true",
+    "airpods": "https://www.finn.no/bap/forsale/search.html?q=airpods&rss=true",
+    "ps5": "https://www.finn.no/bap/forsale/search.html?q=ps5&rss=true",
+    "macbook": "https://www.finn.no/bap/forsale/search.html?q=macbook&rss=true",
+    "ipad": "https://www.finn.no/bap/forsale/search.html?q=ipad&rss=true"
 }
 DEFAULT_MARKET = {
     "ps5": 4500,
