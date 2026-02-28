@@ -110,9 +110,14 @@ def run_once():
 
     summary = []
 
-    for category in SEARCH:
-        print(f"Scanning {category}")
-        feed = feedparser.parse(SEARCH[category])
+   for category in SEARCH:
+    print(f"Scanning {category}")
+
+    headers = {"User-Agent": "Mozilla/5.0"}
+    response = requests.get(SEARCH[category], headers=headers)
+    feed = feedparser.parse(response.text)
+
+    print("Entries found:", len(feed.entries))
 
         for entry in feed.entries:
             try:
