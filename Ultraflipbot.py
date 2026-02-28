@@ -110,7 +110,7 @@ def run_once():
 
     summary = []
 
-   for category in SEARCH:
+    for category in SEARCH:
     print(f"Scanning {category}")
 
     headers = {"User-Agent": "Mozilla/5.0"}
