@@ -144,8 +144,7 @@ def scam_score(text, asking, market):
 #############################
 
 def run_once():
-
-print("🔥 CRON RUN STARTED")
+    print("🔥 CRON RUN STARTED")
 
     summary = []
 
