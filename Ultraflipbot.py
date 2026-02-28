@@ -92,28 +92,11 @@ def send(msg):
 ################################
 
 def extract_price(text):
+    if not text:
+        return None
     cleaned = text.replace(" ", "")
     nums = re.findall(r'\d+', cleaned)
     return int(nums[0]) if nums else None
-
-def scam_score(text, asking, market):
-    score = 0
-    text = text.lower()
-
-    flags = ["forskudd", "western union", "ingen kvittering",
-             "må sendes", "kun vipps", "haster"]
-
-    for f in flags:
-        if f in text:
-            score += 25
-
-    if market and asking < market * 0.5:
-        score += 30
-
-    if len(text) < 35:
-        score += 10
-
-    return min(score, 100)
 
 ################################
 # MAIN
@@ -122,7 +105,7 @@ def scam_score(text, asking, market):
 def run_once():
     print("🔥 CRON RUN STARTED")
 
-    # Test Telegram hver gang
+    # Test Telegram
     send("Bot kjører ✅")
 
     summary = []
@@ -133,33 +116,31 @@ def run_once():
 
         for entry in feed.entries:
             try:
-                ad_id = entry.id
-                text = entry.title + " " + entry.summary
-                asking = extract_price(entry.summary)
+                ad_id = entry.get("id", "")
+                title = entry.get("title", "")
+                summary_text = entry.get("summary", "")
+
+                # 🔥 HENTER PRIS FRA TITLE + SUMMARY
+                asking = extract_price(title + " " + summary_text)
 
                 if not asking:
                     continue
 
-                if asking > 20000:
-                    continue
-
-                save_ad(ad_id, entry.title, asking, category)
+                save_ad(ad_id, title, asking, category)
 
                 market_price = get_market_price(category)
                 if not market_price:
                     continue
 
                 profit = market_price - asking
-                roi = (profit / asking) * 100
-                scam = scam_score(text, asking, market_price)
+                roi = (profit / asking) * 100 if asking else 0
 
-                print(entry.title, asking, "ROI:", round(roi,1))
+                print(title, asking, "ROI:", round(roi, 1))
 
-                # Mildere filter så du får treff
-                if roi > -100:
-                    summary.append(
-                        f"🔥 DEAL\n{entry.title}\nPris: {asking}\nFlip: +{profit}\nROI: {round(roi,1)}%"
-                    )
+                # 🚀 SEND ALT MED PRIS
+                summary.append(
+                    f"🔥 DEAL\n{title}\nPris: {asking}\nFlip: {profit}\nROI: {round(roi,1)}%"
+                )
 
             except Exception as e:
                 print("Entry error:", e)
