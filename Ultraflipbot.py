@@ -113,38 +113,49 @@ def run_once():
     for category in SEARCH:
         print(f"Scanning {category}")
 
-        headers = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(SEARCH[category], headers=headers)
-        feed = feedparser.parse(response.text)
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Accept-Language": "no-NO,no;q=0.9"
+        }
 
-        print("Entries found:", len(feed.entries))
+        # Fjerner rss=true hvis det finnes
+        url = SEARCH[category].replace("&rss=true", "")
 
-        for entry in feed.entries:
+        response = requests.get(url, headers=headers)
+        html = response.text
+
+        # Hent adId + pris
+        ads = re.findall(r'"adId":"(\d+)".+?"mainPrice":"(\d+)"', html)
+
+        print("Entries found:", len(ads))
+
+        for ad_id, price in ads:
             try:
-                ad_id = entry.get("id", "")
-                title = entry.get("title", "")
-                summary_text = entry.get("summary", "")
+                asking = int(price)
 
-                # 🔥 HENTER PRIS FRA TITLE + SUMMARY
-                asking = extract_price(title + " " + summary_text)
-
-                if not asking:
+                if asking > 20000:
                     continue
 
-                save_ad(ad_id, title, asking, category)
+                # Finn tittel
+                title_match = re.search(
+                    rf'"adId":"{ad_id}".+?"heading":"(.*?)"',
+                    html
+                )
+
+                title = title_match.group(1) if title_match else "Ukjent annonse"
 
                 market_price = get_market_price(category)
                 if not market_price:
                     continue
 
                 profit = market_price - asking
-                roi = (profit / asking) * 100 if asking else 0
+                roi = (profit / asking) * 100
 
                 print(title, asking, "ROI:", round(roi, 1))
 
-                # 🚀 SEND ALT MED PRIS
+                # 🔥 Midlertidig: send ALT så vi tester
                 summary.append(
-                    f"🔥 DEAL\n{title}\nPris: {asking}\nFlip: {profit}\nROI: {round(roi,1)}%"
+                    f"🔥 DEAL\n{title}\nPris: {asking}\nFlip: +{profit}\nROI: {round(roi,1)}%"
                 )
 
             except Exception as e:
@@ -153,6 +164,8 @@ def run_once():
 
     if summary:
         send("📊 TRADER FEED\n\n" + "\n\n".join(summary[:10]))
+    else:
+        print("Ingen deals funnet")
 
     print("✅ CRON RUN DONE")
     gc.collect()
