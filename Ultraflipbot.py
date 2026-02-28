@@ -5,6 +5,7 @@ import sqlite3
 import statistics
 import gc
 import time
+from bs4 import BeautifulSoup
 
 #############################
 # CONFIG
